@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "outDir": "./InfoTrack.iSupportMvc/wwwroot/dist/",
+        "sourceMap": true,
+        "target": "es5",
+        "module": "commonjs",
+        "jsx": "react",
+        "strict": true,
+        "noImplicitAny": false,
+        "experimentalDecorators": true,
+        "lib": ["esnext", "dom"],
+        "pretty": true
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}
