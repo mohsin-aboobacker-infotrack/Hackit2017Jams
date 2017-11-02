@@ -8,7 +8,7 @@ module.exports = {
     entry: common.entry,
     output: {
         publicPath: '/',
-        path: helpers.root('InfoTrack.iSupportMvc', 'wwwroot', 'dist'),
+        path: helpers.root('frontend', 'dist'),
         filename: "index.test.js"
     },
     devtool: "source-map",
@@ -29,7 +29,7 @@ module.exports = {
     devServer: {
         historyApiFallback: true,
         port: 4444,
-        contentBase: helpers.root("InfoTrack.iSupport.FrontEnd"),
+        contentBase: helpers.root("frontend"),
         proxy: {
             '/api/Conveyancers/*': 'http://localhost:4444',
             '/api/Quotes/*': 'http://localhost:4444',

@@ -5,7 +5,7 @@ const helpers = require('./helpers');
 
 module.exports = {
     entry: {
-        property: helpers.root("InfoTrack.iSupport.FrontEnd", "index.tsx")
+        property: helpers.root("frontend", "index.tsx")
     },
     rules: [
         {
