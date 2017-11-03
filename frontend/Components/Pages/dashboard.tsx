@@ -1,13 +1,34 @@
 import * as React from 'react';
-import { Button } from 'infotrack-ui/lib';
+import { Button, Spinner } from 'infotrack-ui/lib';
 import { ActionCreator } from 'redux';
 
 import '../Styles/common.css';
+import { uploadFile, faceMatch, detailsMatchInProgress, detailsMatchSuccess } from '../Actions/dashboard-actions';
+import { connect } from 'react-redux';
+import { IFaceMatchModel } from '../Models/face-match-model';
+import { IDetailsMatchResult } from '../Models/details-match-result';
+import { IUserDetails } from '../Models/user-details';
 
 interface IProps {
-    validationInProgress: boolean;
-    validationHasErrored: boolean;
-    validate: ActionCreator<any>;
+    photoFilePath: string;
+    passportFilePath: string;
+    licenseFilePath: string;
+    validationStarted: boolean;
+    uploadPhotoInProgress: boolean;
+    uploadPhotoHasErrored: boolean;
+    uploadPassportInProgress: boolean;
+    uploadPassportHasErrored: boolean;
+    uploadLicenseInProgress: boolean;
+    uploadLicenseHasErrored: boolean;
+    faceMatchInProgress: boolean;
+    faceMatchHasErrored: boolean;
+    faceMatchSuccess: IFaceMatchModel;
+    detailsMatchInProgress: boolean;
+    detailsMatchHasErrored: boolean;
+    detailsMatchSuccess: IDetailsMatchResult;
+    uploadFile: ActionCreator<any>;
+    faceMatch: ActionCreator<any>;
+    detailsMatch: ActionCreator<any>;
 }
 
 interface IState {
@@ -21,17 +42,15 @@ interface IState {
     passportFile: FormData;
     passportFileName: string;
 
-    validations: {
-        nameValidationError?: boolean;
-        dobValidationError?: boolean;
-        genderValidationError?: boolean;
-        photoValidationError?: boolean;
-        licenseValidationError?: boolean;
-        passportValidationError?: boolean;
-    };
+    nameValidationError: boolean;
+    dobValidationError: boolean;
+    genderValidationError: boolean;
+    photoValidationError: boolean;
+    licenseValidationError: boolean;
+    passportValidationError: boolean;
 }
 
-export default class Dashboard extends React.Component<any, IState> {
+class Dashboard extends React.Component<IProps, IState> {
 
     constructor() {
         super();
@@ -45,14 +64,12 @@ export default class Dashboard extends React.Component<any, IState> {
             licenseFileName: "",
             passportFile: new FormData(),
             passportFileName: "",
-            validations: {
-                nameValidationError: false,
-                dobValidationError: false,
-                genderValidationError: false,
-                licenseValidationError: false,
-                passportValidationError: false,
-                photoValidationError: false
-            }
+            nameValidationError: false,
+            dobValidationError: false,
+            genderValidationError: false,
+            licenseValidationError: false,
+            passportValidationError: false,
+            photoValidationError: false
         };
     }
 
@@ -129,54 +146,50 @@ export default class Dashboard extends React.Component<any, IState> {
     }
 
     private validateForm() {
+        let validateSuccess: boolean = true;
         if (this.state.name.trim() === "") {
             this.setState({
-                validations: {
-                    nameValidationError: true
-                }
+                nameValidationError: true
             });
+            validateSuccess = false;
         }
 
         if (this.state.dateOfBirth.trim() === "") {
             this.setState({
-                validations: {
-                    dobValidationError: true
-                }
+                dobValidationError: true
             });
+            validateSuccess = false;
         }
 
         if (this.state.gender.trim() === "") {
             this.setState({
-                validations: {
-                    genderValidationError: true
-                }
+                genderValidationError: true
             });
+            validateSuccess = false;
         }
 
         if (this.state.photoFileName.trim() === "") {
             this.setState({
-                validations: {
-                    photoValidationError: true
-                }
+                photoValidationError: true
             });
+            validateSuccess = false;
         }
 
         if (this.state.licenseFileName.trim() === "") {
             this.setState({
-                validations: {
-                    licenseValidationError: true
-                }
+                licenseValidationError: true
             });
+            validateSuccess = false;
         }
 
         if (this.state.passportFileName.trim() === "") {
             this.setState({
-                validations: {
-                    passportValidationError: true
-                }
+                passportValidationError: true
             });
+            validateSuccess = false;
         }
 
+        return validateSuccess;
     }
 
     private renderForm() {
@@ -185,11 +198,11 @@ export default class Dashboard extends React.Component<any, IState> {
                 <form style={{ width: "800px", padding: "20px" }}>
                     <div className="form-group">
                         <label>Name:</label>
-                        <input type="text" value={this.state.name} className={`form-control ${this.state.validations.nameValidationError ? "validationError" : ""}`} onChange={this.handleChange.bind(this, "name")} />
+                        <input type="text" value={this.state.name} className={`form-control ${this.state.nameValidationError ? "validationError" : ""}`} onChange={this.handleChange.bind(this, "name")} />
                     </div>
                     <div className="form-group">
                         <label>Date of birth:</label>
-                        <input type="date" value={this.state.dateOfBirth} className={`form-control ${this.state.validations.dobValidationError ? "validationError" : ""}`} onChange={this.handleChange.bind(this, "dob")} />
+                        <input type="date" value={this.state.dateOfBirth} className={`form-control ${this.state.dobValidationError ? "validationError" : ""}`} onChange={this.handleChange.bind(this, "dob")} />
                     </div>
                     <div className="form-check form-check-inline">
                         <label style={{ marginRight: "10px" }}>Gender:</label>
@@ -220,6 +233,48 @@ export default class Dashboard extends React.Component<any, IState> {
                     </div>
                     <Button onClick={this.submitForm.bind(this)}>Validate</Button>
                 </form>
+
+                {(this.props.uploadPhotoInProgress || this.props.uploadLicenseInProgress || this.props.uploadPassportInProgress || this.props.validationStarted) && this.renderValidationResults()}
+            </div>
+        );
+    }
+
+    private renderValidationResults() {
+        return (
+            <div>
+                {this.props.uploadPhotoInProgress && <div>Upload photo in progress <Spinner mini /></div>}
+                {this.props.uploadPassportInProgress && <div>Upload passport in progress <Spinner mini /></div>}
+                {this.props.uploadLicenseInProgress && <div>Upload license in progress <Spinner mini /></div>}
+
+                {this.props.validationStarted && <div>{this.renderSummary()}</div>}
+            </div>
+
+        );
+    }
+
+    private renderSummary() {
+        return (
+            <div>
+                <div>
+                    {this.props.faceMatchInProgress && <div><Spinner mini />Face match in progress </div>}
+                    {!this.props.faceMatchInProgress && <div>Confidence: {this.props.faceMatchSuccess.matchPercentage}</div>}
+
+                </div>
+                <div>
+                    {this.props.detailsMatchInProgress && <div><Spinner mini />Name match in progress </div>}
+                    {!this.props.detailsMatchInProgress && <div>Name match result: {this.props.detailsMatchSuccess.NameMatch ? "Pass" : "Fail"}</div>}
+
+                </div>
+                <div>
+                    {this.props.detailsMatchInProgress && <div><Spinner mini />Date of birth match in progress </div>}
+                    {!this.props.detailsMatchInProgress && <div>Date of birth match result: {this.props.detailsMatchSuccess.DobMatch ? "Pass" : "Fail"}</div>}
+
+                </div>
+                <div>
+                    {this.props.detailsMatchInProgress && <div><Spinner mini />Gender match in progress </div>}
+                    {!this.props.detailsMatchInProgress && <div>Gender match result: {this.props.detailsMatchSuccess.GenderMatch ? "Pass" : "Fail"}</div>}
+
+                </div>
             </div>
         );
     }
@@ -229,6 +284,16 @@ export default class Dashboard extends React.Component<any, IState> {
 
         if (this.validateForm()) {
             console.log("going to submit form");
+
+            let userDetail: IUserDetails = {
+                DOB: this.state.dateOfBirth,
+                Gender: this.state.gender,
+                Name: this.state.name
+            };
+
+            this.props.uploadFile(this.state.photoFile, this.state.passportFile, this.state.licenseFile, userDetail);
+        } else {
+            console.log("validation failed");
         }
     }
 
@@ -261,3 +326,34 @@ export default class Dashboard extends React.Component<any, IState> {
         // this.props.uploadFile(formData, this.props.selectedQuestion.QuestionId, fileName);
     }
 }
+
+const mapStateToProps = (state) => {
+    return {
+        photoFilePath: state.photoFilePath,
+        passportFilePath: state.passportFilePath,
+        licenseFilePath: state.licenseFilePath,
+        validationStarted: state.validationStarted,
+        uploadPhotoInProgress: state.uploadPhotoInProgress,
+        uploadPhotoHasErrored: state.uploadPhotoHasErrored,
+        uploadPassportInProgress: state.uploadPassportInProgress,
+        uploadPassportHasErrored: state.uploadPassportHasErrored,
+        uploadLicenseInProgress: state.uploadLicenseInProgress,
+        uploadLicenseHasErrored: state.uploadLicenseHasErrored,
+        faceMatchInProgress: state.faceMatchInProgress,
+        faceMatchHasErrored: state.faceMatchHasErrored,
+        detailsMatchInProgress: state.detailsMatchInProgress,
+        detailsMatchHasErrored: state.detailsMatchHasErrored,
+        faceMatchSuccess: state.faceMatchSuccess,
+        detailsMatchSuccess: state.detailsMatchSuccess
+    };
+};
+
+const mapDispatchToProps = (dispatch) => {
+    return {
+        uploadFile: (photoFile: FormData, passportFile: FormData, licenseFile: FormData, userDetails: IUserDetails) => dispatch(uploadFile(photoFile, passportFile, licenseFile, userDetails)),
+        faceMatch: (photoFilePath: string) => dispatch(faceMatch(photoFilePath)),
+        detailsMatch: (licensePath: string, passportPath: string) => dispatch(licensePath, passportPath)
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Dashboard);
